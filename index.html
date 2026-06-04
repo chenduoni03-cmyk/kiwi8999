@@ -626,7 +626,7 @@
 
     async function getTableData(tableName) {
         try {
-            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`, {
+            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?sort[0][field]=Created Time&sort[0][direction]=desc`, {
                 headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
             });
             return res.ok ? await res.json() : null;
@@ -646,10 +646,12 @@
         const data = await getTableData("公開產品");
         let html = "";
         if(data && data.records) {
-            // 前端按創建時間降序排序（最新上傳的排在最前面）
-            const sortedProducts = data.records.sort((a, b) => 
-                new Date(b.createdTime) - new Date(a.createdTime)
-            );
+            // 雙重保證排序：先讓Airtable API按創建時間降序返回，再在前端強制重新排序
+            const sortedProducts = data.records.sort((a, b) => {
+                const timeA = new Date(a.createdTime).getTime();
+                const timeB = new Date(b.createdTime).getTime();
+                return timeB - timeA; // 降序：最新的在最前面
+            });
             
             // 過濾掉沒有圖片或品名的空記錄
             const validProducts = sortedProducts.filter(item => 
@@ -689,10 +691,12 @@
         const data = await getTableData("私密產品");
         let html = "";
         if(data && data.records) {
-            // 同樣按創建時間降序排序
-            const sortedProducts = data.records.sort((a, b) => 
-                new Date(b.createdTime) - new Date(a.createdTime)
-            );
+            // 同樣雙重保證排序
+            const sortedProducts = data.records.sort((a, b) => {
+                const timeA = new Date(a.createdTime).getTime();
+                const timeB = new Date(b.createdTime).getTime();
+                return timeB - timeA;
+            });
             
             // 過濾空記錄
             const validProducts = sortedProducts.filter(item => 
