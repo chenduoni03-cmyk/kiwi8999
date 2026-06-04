@@ -605,7 +605,7 @@
         }
     }
 
-    // 重點修正：拿掉URL所有sort參數，單純抓原始資料，避免欄位名稱錯誤導致API 400失敗
+    // 關鍵：原始請求、無任何排序參數
     async function getTableData(tableName) {
         try {
             const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`, {
@@ -613,11 +613,12 @@
             });
             return res.ok ? await res.json() : null;
         } catch (e) {
-            console.error("Airtable錯誤:", e);
+            console.error(e);
             return null;
         }
     }
 
+    // 關鍵：移除前端所有createdTime排序邏輯，回復原生順序
     async function loadPublicAlbum() {
         const wrap = document.getElementById('public-album');
         const loadEl = document.getElementById('public-load');
@@ -628,13 +629,8 @@
         const data = await getTableData("公開產品");
         let html = "";
         if(data && data.records) {
-            // 只在前端JS做時間降序：最新建立的商品在前
-            const sortedProducts = data.records.sort((a,b)=>{
-                const t1 = new Date(a.createdTime).valueOf();
-                const t2 = new Date(b.createdTime).valueOf();
-                return t2 - t1;
-            });
-            const valid = sortedProducts.filter(x=>x.fields.產品圖片?.length>0 && x.fields.品名?.trim());
+            // 不做任何時間排序，直接使用Airtable原生返回順序
+            const valid = data.records.filter(x=>x.fields.產品圖片?.length>0 && x.fields.品名?.trim());
             valid.forEach(item=>{
                 const pic = item.fields.產品圖片[0].url;
                 const name = item.fields.品名.replace(/"/g,'&quot;');
@@ -658,12 +654,7 @@
         const data = await getTableData("私密產品");
         let html = "";
         if(data && data.records) {
-            const sortedProducts = data.records.sort((a,b)=>{
-                const t1 = new Date(a.createdTime).valueOf();
-                const t2 = new Date(b.createdTime).valueOf();
-                return t2 - t1;
-            });
-            const valid = sortedProducts.filter(x=>x.fields.產品圖片?.length>0 && x.fields.品名?.trim());
+            const valid = data.records.filter(x=>x.fields.產品圖片?.length>0 && x.fields.品名?.trim());
             valid.forEach(item=>{
                 const pic = item.fields.產品圖片[0].url;
                 const name = item.fields.品名.replace(/"/g,'&quot;');
