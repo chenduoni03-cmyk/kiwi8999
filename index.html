@@ -305,22 +305,48 @@
             border: 1px solid #FECDD3;
         }
 
+        /* 多圖詳情彈窗 */
         .img-modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(44, 30, 24, 0.9);
+            background: rgba(44, 30, 24, 0.95);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 999;
+            flex-direction: column;
         }
-        .img-modal img {
+        .modal-title {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .modal-gallery {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
             max-width: 90%;
-            max-height: 90%;
-            border-radius: 12px;
+            padding: 10px;
+        }
+        .modal-gallery img {
+            max-height: 70vh;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .modal-gallery img:hover {
+            transform: scale(1.02);
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
         }
 
         .page { display: none; }
@@ -345,6 +371,8 @@
             .album-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
             .album-img { height: 140px; }
             .service-list { grid-template-columns: 1fr; }
+            .modal-gallery { flex-direction: column; align-items: center; }
+            .modal-gallery img { max-width: 90%; max-height: auto; }
         }
     </style>
 </head>
@@ -425,7 +453,7 @@
 <div id="products" class="page">
     <div class="container">
         <h2 class="page-title">產品相簿</h2>
-        <p class="page-desc">公開展示商品｜點擊圖片可放大查看細節</p>
+        <p class="page-desc">公開展示商品｜點擊圖片可查看全部詳情圖</p>
         <div class="loading" id="public-load">載入商品中...</div>
         <div class="album-grid" id="public-album" style="display:none;"></div>
     </div>
@@ -459,8 +487,11 @@
     </div>
 </div>
 
-<div class="img-modal" id="img-modal" onclick="closeImgModal()">
-    <img id="big-img">
+<!-- 多圖詳情彈窗 -->
+<div class="img-modal" id="img-modal">
+    <span class="modal-close" onclick="closeImgModal()">&times;</span>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-gallery" id="modal-gallery"></div>
 </div>
 
 <footer class="footer">
@@ -469,7 +500,6 @@
 </footer>
 
 <script>
-    // 已修正BASE_ID錯字，對應你的鏈接 appzJkqNGlMPwOyi3
     const AIRTABLE_BASE_ID = "appzJkqNGlMPwOyi3";
     const AIRTABLE_API_KEY = "patJrFczg3csxNoFx.4f075fa14f8e613194b40ae272352ff1d00844fb1c1e29c38d829db7f5ebe2d9";
     const PRIVATE_PASSWORD = "nick9997";
@@ -483,11 +513,21 @@
         window.scrollTo(0,0);
     }
 
-    function openImgModal(imgUrl) {
-        if(!imgUrl) return;
-        document.getElementById('big-img').src = imgUrl;
+    // 打開多圖詳情彈窗
+    function openImgModal(productName, images) {
+        if(!images || images.length === 0) return;
+        document.getElementById('modal-title').innerText = productName;
+        const gallery = document.getElementById('modal-gallery');
+        gallery.innerHTML = "";
+        images.forEach(img => {
+            const imgEl = document.createElement('img');
+            imgEl.src = img.url;
+            imgEl.alt = productName;
+            gallery.appendChild(imgEl);
+        });
         document.getElementById('img-modal').style.display = 'flex';
     }
+
     function closeImgModal() {
         document.getElementById('img-modal').style.display = 'none';
     }
@@ -517,13 +557,21 @@
         const wrap = document.getElementById('public-album');
         let html = "";
         if(data && data.records) {
-            data.records.forEach(item => {
-                const img = item.fields.產品圖片?.[0]?.url || "";
-                const name = item.fields.品名 || "";
+            // 過濾掉沒有圖片或品名的空記錄
+            const validProducts = data.records.filter(item => 
+                item.fields.產品圖片?.length > 0 && item.fields.品名?.trim()
+            );
+            
+            validProducts.forEach(item => {
+                const firstImg = item.fields.產品圖片[0].url;
+                const name = item.fields.品名.trim();
                 const code = item.fields.貨號 || "";
+                // 把所有圖片數據傳給點擊事件
+                const imagesJson = JSON.stringify(item.fields.產品圖片).replace(/"/g, '&quot;');
+                
                 html += `
-                    <div class="album-item" onclick="openImgModal('${img}')">
-                        <img class="album-img" src="${img}" loading="lazy">
+                    <div class="album-item" onclick='openImgModal("${name.replace(/"/g, '&quot;')}", ${imagesJson})'>
+                        <img class="album-img" src="${firstImg}" loading="lazy" alt="${name}">
                         <div class="album-info">
                             <div class="album-name">${name}</div>
                             <div class="album-code">貨號：${code}</div>
@@ -542,13 +590,20 @@
         const wrap = document.getElementById('private-album');
         let html = "";
         if(data && data.records) {
-            data.records.forEach(item => {
-                const img = item.fields.產品圖片?.[0]?.url || "";
-                const name = item.fields.品名 || "";
+            // 同樣過濾空記錄
+            const validProducts = data.records.filter(item => 
+                item.fields.產品圖片?.length > 0 && item.fields.品名?.trim()
+            );
+            
+            validProducts.forEach(item => {
+                const firstImg = item.fields.產品圖片[0].url;
+                const name = item.fields.品名.trim();
                 const code = item.fields.貨號 || "";
+                const imagesJson = JSON.stringify(item.fields.產品圖片).replace(/"/g, '&quot;');
+                
                 html += `
-                    <div class="album-item" onclick="openImgModal('${img}')">
-                        <img class="album-img" src="${img}" loading="lazy">
+                    <div class="album-item" onclick='openImgModal("${name.replace(/"/g, '&quot;')}", ${imagesJson})'>
+                        <img class="album-img" src="${firstImg}" loading="lazy" alt="${name}">
                         <div class="album-info">
                             <div class="album-name">${name}</div>
                             <div class="album-code">貨號：${code}</div>
