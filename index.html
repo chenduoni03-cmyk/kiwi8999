@@ -30,7 +30,6 @@
             line-height: 1.8;
         }
 
-        /* 導航列（LOGO專用） */
         .header {
             background: var(--bg-dark);
             position: sticky;
@@ -91,7 +90,6 @@
             margin-bottom: 30px;
         }
 
-        /* 首頁Banner（LOGO居中） */
         .home-banner {
             background: linear-gradient(135deg, #FFC13B 0%, #E0A72B 100%);
             padding: 70px 20px;
@@ -172,7 +170,6 @@
             color: var(--text-gray);
         }
 
-        /* 成功實績圖片展示區 */
         .case-gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -340,7 +337,6 @@
             border: 1px solid #FECDD3;
         }
 
-        /* 多圖詳情彈窗 */
         .img-modal {
             position: fixed;
             top: 0;
@@ -416,7 +412,6 @@
 
 <header class="header">
     <div class="nav-wrap">
-        <!-- 左上角LOGO -->
         <div class="logo">
             <img src="logo.png" alt="尼老闆 NKBOSS">
         </div>
@@ -430,7 +425,6 @@
 </header>
 
 <div id="home" class="page active">
-    <!-- 首頁Banner大LOGO -->
     <div class="home-banner">
         <img src="logo.png" alt="尼老闆 NKBOSS">
         <p>專業生活用品進口大盤｜企業禮贈品｜政府標案｜百貨批發代採一站式服務</p>
@@ -457,50 +451,40 @@
             <p>銷售業務部｜產品開發部｜美編設計部｜客戶服務部｜後勤行政部｜專案企劃部<br>專業團隊一條龍：原廠洽談 → 採購報關 → 美編上架 → 訂單出貨 → 售後服務。</p>
         </div>
         
-        <!-- 成功合作實績區（圖片+表格，所有路徑已完全匹配） -->
         <div class="about-block">
             <h3>成功合作實績</h3>
-            
-            <!-- 實績圖片展示（100%匹配你GitHub當前的真實文件名） -->
             <div class="case-gallery">
                 <div class="case-card">
                     <div class="case-header">🚗 豐田汽車 TOYOTA</div>
                     <img src="images/case-toyota.jpg.jfif" alt="豐田汽車公司禮贈品" class="case-img">
                     <div class="case-desc">提供大容量冰霸杯、彈蓋保溫瓶、休閒帽、露營用品等全系列企業禮贈品</div>
                 </div>
-                
                 <div class="case-card">
                     <div class="case-header">🐶 希爾斯飼料</div>
                     <img src="images/case-hills.jpg.png" alt="希爾斯飼料寵物手推車" class="case-img">
                     <div class="case-desc">寵物界最大代理商特別訂製寵物手推車3000台，全台寵物展活動專用</div>
                 </div>
-                
                 <div class="case-card">
                     <div class="case-header">🎡 尚順育樂世界</div>
                     <img src="images/case-shangshun.jpg" alt="尚順購物中心卡友滿額禮" class="case-img">
                     <div class="case-desc">百貨週年慶卡友滿額禮長期配合，提供地墊、保溫瓶、卡通棉被等熱門商品</div>
                 </div>
-                
                 <div class="case-card">
                     <div class="case-header">🛒 MOMO購物網</div>
                     <img src="images/case-momo.jpg.png" alt="MOMO購物網型錄商品" class="case-img">
                     <div class="case-desc">長期供應MOMO購物網型錄商品，涵蓋居家、廚房、戶外等多品類</div>
                 </div>
-                
                 <div class="case-card">
                     <div class="case-header">🏬 環球購物中心</div>
                     <img src="images/case-global1.jpg.png" alt="環球購物中心禮贈品" class="case-img">
                     <div class="case-desc">超級寵愛會員週、暑假童樂會等主題活動禮品全案規劃與供應</div>
                 </div>
-                
                 <div class="case-card">
                     <div class="case-header">🏬 環球購物中心</div>
                     <img src="images/case-global2.jpg.png" alt="環球購物中心跨世代活動" class="case-img">
                     <div class="case-desc">跨世代瘋奧運、開學特企等大型活動禮品供應，累計服務超過10萬名會員</div>
                 </div>
             </div>
-            
-            <!-- 詳細成交數據表格 -->
             <table class="case-table">
                 <thead><tr><th>合作單位</th><th>成交物品 / 專案</th><th>數量 / 備註</th></tr></thead>
                 <tbody>
@@ -567,7 +551,6 @@
     </div>
 </div>
 
-<!-- 多圖詳情彈窗 -->
 <div class="img-modal" id="img-modal">
     <span class="modal-close" onclick="closeImgModal()">&times;</span>
     <div class="modal-title" id="modal-title"></div>
@@ -580,7 +563,6 @@
 </footer>
 
 <script>
-    // 已確認Airtable參數完全正確
     const AIRTABLE_BASE_ID = "appzJkqNGlMPwOyi3";
     const AIRTABLE_API_KEY = "patJrFczg3csxNoFx.4f075fa14f8e613194b40ae272352ff1d00844fb1c1e29c38d829db7f5ebe2d9";
     const PRIVATE_PASSWORD = "nick9997";
@@ -594,7 +576,6 @@
         window.scrollTo(0,0);
     }
 
-    // 打開多圖詳情彈窗
     function openImgModal(productName, images) {
         if(!images || images.length === 0) return;
         document.getElementById('modal-title').innerText = productName;
@@ -624,16 +605,16 @@
         }
     }
 
+    // 重點修正：拿掉URL所有sort參數，單純抓原始資料，避免欄位名稱錯誤導致API 400失敗
     async function getTableData(tableName) {
         try {
-            // 修正：繁體中文Airtable的創建時間字段名是「建立時間」
-            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?sort[0][field]=建立時間&sort[0][direction]=desc`, {
+            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`, {
                 headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
             });
             return res.ok ? await res.json() : null;
-        } catch (e) { 
-            console.error("Airtable API錯誤:", e);
-            return null; 
+        } catch (e) {
+            console.error("Airtable錯誤:", e);
+            return null;
         }
     }
 
@@ -647,35 +628,20 @@
         const data = await getTableData("公開產品");
         let html = "";
         if(data && data.records) {
-            // 雙重保證排序：API端先按建立時間降序，前端再強制二次排序
-            const sortedProducts = data.records.sort((a, b) => {
-                const timeA = new Date(a.createdTime).getTime();
-                const timeB = new Date(b.createdTime).getTime();
-                return timeB - timeA; // 降序：最新的在最前面
+            // 只在前端JS做時間降序：最新建立的商品在前
+            const sortedProducts = data.records.sort((a,b)=>{
+                const t1 = new Date(a.createdTime).valueOf();
+                const t2 = new Date(b.createdTime).valueOf();
+                return t2 - t1;
             });
-            
-            // 過濾掉沒有圖片或品名的空記錄
-            const validProducts = sortedProducts.filter(item => 
-                item.fields.產品圖片?.length > 0 && item.fields.品名?.trim()
-            );
-            
-            validProducts.forEach(item => {
-                const firstImg = item.fields.產品圖片[0].url;
-                const name = item.fields.品名.trim();
-                const code = item.fields.貨號 || "";
-                // 把所有圖片數據傳給點擊事件
-                const imagesJson = JSON.stringify(item.fields.產品圖片).replace(/"/g, '&quot;');
-                
-                html += `
-                    <div class="album-item" onclick='openImgModal("${name.replace(/"/g, '&quot;')}", ${imagesJson})'>
-                        <img class="album-img" src="${firstImg}" loading="lazy" alt="${name}">
-                        <div class="album-info">
-                            <div class="album-name">${name}</div>
-                            <div class="album-code">貨號：${code}</div>
-                        </div>
-                    </div>
-                `;
-            });
+            const valid = sortedProducts.filter(x=>x.fields.產品圖片?.length>0 && x.fields.品名?.trim());
+            valid.forEach(item=>{
+                const pic = item.fields.產品圖片[0].url;
+                const name = item.fields.品名.replace(/"/g,'&quot;');
+                const code = item.fields.貨號||"";
+                const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
+                html += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" src="${pic}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
+            })
         }
         wrap.innerHTML = html;
         loadEl.style.display = 'none';
@@ -692,34 +658,19 @@
         const data = await getTableData("私密產品");
         let html = "";
         if(data && data.records) {
-            // 同樣雙重保證排序
-            const sortedProducts = data.records.sort((a, b) => {
-                const timeA = new Date(a.createdTime).getTime();
-                const timeB = new Date(b.createdTime).getTime();
-                return timeB - timeA;
+            const sortedProducts = data.records.sort((a,b)=>{
+                const t1 = new Date(a.createdTime).valueOf();
+                const t2 = new Date(b.createdTime).valueOf();
+                return t2 - t1;
             });
-            
-            // 過濾空記錄
-            const validProducts = sortedProducts.filter(item => 
-                item.fields.產品圖片?.length > 0 && item.fields.品名?.trim()
-            );
-            
-            validProducts.forEach(item => {
-                const firstImg = item.fields.產品圖片[0].url;
-                const name = item.fields.品名.trim();
-                const code = item.fields.貨號 || "";
-                const imagesJson = JSON.stringify(item.fields.產品圖片).replace(/"/g, '&quot;');
-                
-                html += `
-                    <div class="album-item" onclick='openImgModal("${name.replace(/"/g, '&quot;')}", ${imagesJson})'>
-                        <img class="album-img" src="${firstImg}" loading="lazy" alt="${name}">
-                        <div class="album-info">
-                            <div class="album-name">${name}</div>
-                            <div class="album-code">貨號：${code}</div>
-                        </div>
-                    </div>
-                `;
-            });
+            const valid = sortedProducts.filter(x=>x.fields.產品圖片?.length>0 && x.fields.品名?.trim());
+            valid.forEach(item=>{
+                const pic = item.fields.產品圖片[0].url;
+                const name = item.fields.品名.replace(/"/g,'&quot;');
+                const code = item.fields.貨號||"";
+                const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
+                html += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" src="${pic}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
+            })
         }
         wrap.innerHTML = html;
         loadEl.style.display = 'none';
@@ -783,10 +734,9 @@
         }
     }
 
-    window.addEventListener("DOMContentLoaded", function(){
-        // 頁面加載完成後自動加載產品數據
+    window.addEventListener("DOMContentLoaded",()=>{
         loadPublicAlbum();
-    });
+    })
 </script>
 </body>
 </html>
