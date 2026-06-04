@@ -545,7 +545,8 @@
 
     async function getTableData(tableName) {
         try {
-            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`, {
+            // ✅ 新增：按創建時間降序排序（最新上傳的排在最前面）
+            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?sort[0][field]=createdTime&sort[0][direction]=desc`, {
                 headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
             });
             return res.ok ? await res.json() : null;
