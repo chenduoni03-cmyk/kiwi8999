@@ -626,7 +626,8 @@
 
     async function getTableData(tableName) {
         try {
-            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?sort[0][field]=Created Time&sort[0][direction]=desc`, {
+            // 修正：繁體中文Airtable的創建時間字段名是「建立時間」
+            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?sort[0][field]=建立時間&sort[0][direction]=desc`, {
                 headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
             });
             return res.ok ? await res.json() : null;
@@ -646,7 +647,7 @@
         const data = await getTableData("公開產品");
         let html = "";
         if(data && data.records) {
-            // 雙重保證排序：先讓Airtable API按創建時間降序返回，再在前端強制重新排序
+            // 雙重保證排序：API端先按建立時間降序，前端再強制二次排序
             const sortedProducts = data.records.sort((a, b) => {
                 const timeA = new Date(a.createdTime).getTime();
                 const timeB = new Date(b.createdTime).getTime();
