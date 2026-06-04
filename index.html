@@ -421,7 +421,7 @@
             <img src="logo.png" alt="尼老闆 NKBOSS">
         </div>
         <nav class="nav-menu">
-            <a onclick="switchPage('home',this)">首頁</a>
+            <a onclick="switchPage('home',this)" class="active">首頁</a>
             <a onclick="switchPage('products',this)">產品相簿</a>
             <a onclick="switchPage('private',this)">品牌專區</a>
             <a onclick="switchPage('contact',this)">詢價合作</a>
@@ -457,7 +457,7 @@
             <p>銷售業務部｜產品開發部｜美編設計部｜客戶服務部｜後勤行政部｜專案企劃部<br>專業團隊一條龍：原廠洽談 → 採購報關 → 美編上架 → 訂單出貨 → 售後服務。</p>
         </div>
         
-        <!-- ✅ 升級後的成功合作實績區（圖片+表格） -->
+        <!-- 成功合作實績區（圖片+表格） -->
         <div class="about-block">
             <h3>成功合作實績</h3>
             
@@ -580,6 +580,7 @@
 </footer>
 
 <script>
+    // 已確認Airtable參數完全正確
     const AIRTABLE_BASE_ID = "appzJkqNGlMPwOyi3";
     const AIRTABLE_API_KEY = "patJrFczg3csxNoFx.4f075fa14f8e613194b40ae272352ff1d00844fb1c1e29c38d829db7f5ebe2d9";
     const PRIVATE_PASSWORD = "nick9997";
@@ -591,6 +592,11 @@
         document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
         if(navEl) navEl.classList.add('active');
         window.scrollTo(0,0);
+        
+        // 切換到產品頁時重新加載數據
+        if(pageId === 'products') {
+            loadPublicAlbum();
+        }
     }
 
     // 打開多圖詳情彈窗
@@ -630,12 +636,20 @@
                 headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
             });
             return res.ok ? await res.json() : null;
-        } catch (e) { return null; }
+        } catch (e) { 
+            console.error("Airtable API錯誤:", e);
+            return null; 
+        }
     }
 
     async function loadPublicAlbum() {
-        const data = await getTableData("公開產品");
         const wrap = document.getElementById('public-album');
+        const loadEl = document.getElementById('public-load');
+        wrap.innerHTML = "";
+        loadEl.style.display = 'block';
+        wrap.style.display = 'none';
+        
+        const data = await getTableData("公開產品");
         let html = "";
         if(data && data.records) {
             // 過濾掉沒有圖片或品名的空記錄
@@ -662,13 +676,18 @@
             });
         }
         wrap.innerHTML = html;
-        document.getElementById('public-load').style.display = 'none';
+        loadEl.style.display = 'none';
         wrap.style.display = 'grid';
     }
 
     async function loadPrivateAlbum() {
-        const data = await getTableData("私密產品");
         const wrap = document.getElementById('private-album');
+        const loadEl = document.getElementById('private-load');
+        wrap.innerHTML = "";
+        loadEl.style.display = 'block';
+        wrap.style.display = 'none';
+        
+        const data = await getTableData("私密產品");
         let html = "";
         if(data && data.records) {
             // 同樣過濾空記錄
@@ -694,7 +713,7 @@
             });
         }
         wrap.innerHTML = html;
-        document.getElementById('private-load').style.display = 'none';
+        loadEl.style.display = 'none';
         wrap.style.display = 'grid';
     }
 
@@ -756,6 +775,7 @@
     }
 
     window.addEventListener("DOMContentLoaded", function(){
+        // 頁面加載完成後自動加載首頁和產品數據
         loadPublicAlbum();
     });
 </script>
