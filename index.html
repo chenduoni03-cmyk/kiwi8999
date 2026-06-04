@@ -172,6 +172,41 @@
             color: var(--text-gray);
         }
 
+        /* 成功實績圖片展示區 */
+        .case-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 25px 0;
+        }
+        .case-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .case-header {
+            background: var(--bg-dark);
+            color: white;
+            padding: 12px 15px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .case-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .case-desc {
+            padding: 12px 15px;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
         .case-table {
             width: 100%;
             border-collapse: collapse;
@@ -373,6 +408,7 @@
             .service-list { grid-template-columns: 1fr; }
             .modal-gallery { flex-direction: column; align-items: center; }
             .modal-gallery img { max-width: 90%; max-height: auto; }
+            .case-gallery { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -420,8 +456,51 @@
             <h3>組織架構</h3>
             <p>銷售業務部｜產品開發部｜美編設計部｜客戶服務部｜後勤行政部｜專案企劃部<br>專業團隊一條龍：原廠洽談 → 採購報關 → 美編上架 → 訂單出貨 → 售後服務。</p>
         </div>
+        
+        <!-- ✅ 升級後的成功合作實績區（圖片+表格） -->
         <div class="about-block">
             <h3>成功合作實績</h3>
+            
+            <!-- 實績圖片展示 -->
+            <div class="case-gallery">
+                <div class="case-card">
+                    <div class="case-header">🚗 豐田汽車 TOYOTA</div>
+                    <img src="images/case-toyota.jpg" alt="豐田汽車公司禮贈品" class="case-img">
+                    <div class="case-desc">提供大容量冰霸杯、彈蓋保溫瓶、休閒帽、露營用品等全系列企業禮贈品</div>
+                </div>
+                
+                <div class="case-card">
+                    <div class="case-header">🐶 希爾斯飼料</div>
+                    <img src="images/case-hills.jpg" alt="希爾斯飼料寵物手推車" class="case-img">
+                    <div class="case-desc">寵物界最大代理商特別訂製寵物手推車2000台，全台寵物展活動專用</div>
+                </div>
+                
+                <div class="case-card">
+                    <div class="case-header">🎡 尚順育樂世界</div>
+                    <img src="images/case-shangshun.jpg" alt="尚順購物中心卡友滿額禮" class="case-img">
+                    <div class="case-desc">百貨週年慶卡友滿額禮長期配合，提供地墊、保溫瓶、卡通棉被等熱門商品</div>
+                </div>
+                
+                <div class="case-card">
+                    <div class="case-header">🛒 MOMO購物網</div>
+                    <img src="images/case-momo.jpg" alt="MOMO購物網型錄商品" class="case-img">
+                    <div class="case-desc">長期供應MOMO購物網型錄商品，涵蓋居家、廚房、戶外等多品類</div>
+                </div>
+                
+                <div class="case-card">
+                    <div class="case-header">🏬 環球購物中心</div>
+                    <img src="images/case-global1.jpg" alt="環球購物中心禮贈品" class="case-img">
+                    <div class="case-desc">超級寵愛會員週、暑假童樂會等主題活動禮品全案規劃與供應</div>
+                </div>
+                
+                <div class="case-card">
+                    <div class="case-header">🏬 環球購物中心</div>
+                    <img src="images/case-global2.jpg" alt="環球購物中心跨世代活動" class="case-img">
+                    <div class="case-desc">跨世代瘋奧運、開學特企等大型活動禮品供應，累計服務超過10萬名會員</div>
+                </div>
+            </div>
+            
+            <!-- 詳細成交數據表格 -->
             <table class="case-table">
                 <thead><tr><th>合作單位</th><th>成交物品 / 專案</th><th>數量 / 備註</th></tr></thead>
                 <tbody>
@@ -439,6 +518,7 @@
                 </tbody>
             </table>
         </div>
+        
         <div class="contact-card">
             <h3 style="margin-bottom:20px;">聯繫資訊</h3>
             <div class="contact-item"><div class="contact-label">負責人</div><div class="contact-value">游蕙甄</div></div>
@@ -545,7 +625,7 @@
 
     async function getTableData(tableName) {
         try {
-            // ✅ 新增：按創建時間降序排序（最新上傳的排在最前面）
+            // 按創建時間降序排序（最新上傳的排在最前面）
             const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?sort[0][field]=createdTime&sort[0][direction]=desc`, {
                 headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
             });
