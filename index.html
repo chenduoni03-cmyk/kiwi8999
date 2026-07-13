@@ -421,6 +421,7 @@
         <nav class="nav-menu">
             <a onclick="switchPage('home',this)" class="active">首頁</a>
             <a onclick="switchPage('products',this)">產品相簿</a>
+            <a onclick="switchPage('pet',this)">寵物專區</a>
             <a onclick="switchPage('private',this)">品牌專區</a>
             <a onclick="switchPage('contact',this)">詢價合作</a>
         </nav>
@@ -526,6 +527,15 @@
     </div>
 </div>
 
+<div id="pet" class="page">
+    <div class="container">
+        <h2 class="page-title">寵物專區</h2>
+        <p class="page-desc">公開展示寵物用品｜點擊圖片可查看全部詳情圖</p>
+        <div class="loading" id="pet-load">載入商品中...</div>
+        <div class="album-grid" id="pet-album" style="display:none;"></div>
+    </div>
+</div>
+
 <div id="private" class="page">
     <div class="container">
         <h2 class="page-title">品牌專區</h2>
@@ -570,6 +580,7 @@
     const AIRTABLE_API_KEY = "patJrFczg3csxNoFx.4f075fa14f8e613194b40ae272352ff1d00844fb1c1e29c38d829db7f5ebe2d9";
     const PRIVATE_PASSWORD = "nick9997";
     const RECEIVE_MAIL = "tw.jsport@gmail.com";
+    const PET_VIEW_ID = "viwAmVVH5Xn4vchNa";
 
     function switchPage(pageId, navEl) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -577,6 +588,11 @@
         document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
         if(navEl) navEl.classList.add('active');
         window.scrollTo(0,0);
+        
+        // 切換到對應頁面時載入數據
+        if(pageId === 'pet') {
+            loadPetAlbum();
+        }
     }
 
     function openImgModal(productName, images) {
@@ -608,9 +624,13 @@
         }
     }
 
-    async function getTableData(tableName) {
+    async function getTableData(tableName, viewId = null) {
         try {
-            const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`, {
+            let url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`;
+            if (viewId) {
+                url += `?view=${encodeURIComponent(viewId)}`;
+            }
+            const res = await fetch(url, {
                 headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
             });
             return res.ok ? await res.json() : null;
@@ -632,6 +652,35 @@
         let html = "";
         if(data && data.records) {
             // 關鍵：用上架序號降序
+            const sorted = data.records.sort((a,b)=>{
+                let numA = a.fields["上架序號"]||0;
+                let numB = b.fields["上架序號"]||0;
+                return numB - numA;
+            });
+            const valid = sorted.filter(x=>x.fields.產品圖片?.length>0 && x.fields.品名?.trim());
+            valid.forEach(item=>{
+                const pic = item.fields.產品圖片[0].url;
+                const name = item.fields.品名.replace(/"/g,'&quot;');
+                const code = item.fields.貨號||"";
+                const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
+                html += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" src="${pic}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
+            })
+        }
+        wrap.innerHTML = html;
+        loadEl.style.display = 'none';
+        wrap.style.display = 'grid';
+    }
+
+    async function loadPetAlbum() {
+        const wrap = document.getElementById('pet-album');
+        const loadEl = document.getElementById('pet-load');
+        wrap.innerHTML = "";
+        loadEl.style.display = 'block';
+        wrap.style.display = 'none';
+        
+        const data = await getTableData("公開產品", PET_VIEW_ID);
+        let html = "";
+        if(data && data.records) {
             const sorted = data.records.sort((a,b)=>{
                 let numA = a.fields["上架序號"]||0;
                 let numB = b.fields["上架序號"]||0;
