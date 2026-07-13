@@ -297,6 +297,11 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(255,193,59,0.2);
         }
+        textarea.form-input {
+            height: 90px;
+            resize: vertical;
+            padding-top: 10px;
+        }
         .form-btn {
             width: 100%;
             height: 42px;
@@ -509,7 +514,6 @@
         
         <div class="contact-card">
             <h3 style="margin-bottom:20px;">聯繫資訊</h3>
-            <div class="contact-item"><div class="contact-label">負責人</div><div class="contact-value">游蕙甄</div></div>
             <div class="contact-item"><div class="contact-label">公司電話</div><div class="contact-value">02-22268881</div></div>
             <div class="contact-item"><div class="contact-label">行動電話</div><div class="contact-value">0912-500-704</div></div>
             <div class="contact-item"><div class="contact-label">LINE ID</div><div class="contact-value">kiwi8999</div></div>
@@ -552,14 +556,25 @@
 <div id="contact" class="page">
     <div class="container">
         <h2 class="page-title">線上詢價合作</h2>
-        <p class="page-desc">填寫需求，訊息自動寄至 tw.jsport@gmail.com</p>
+        <p class="page-desc">填寫需求後數據自動存檔，我們會盡快與您聯繫</p>
         <div class="form-card">
             <div id="form-msg" class="msg-tip"></div>
-            <input class="form-input" type="text" id="c-name" placeholder="聯絡姓名">
+            <input class="form-input" type="text" id="c-name" placeholder="聯絡姓名 *">
+            <input class="form-input" type="text" id="c-company" placeholder="公司名稱 / 個人採購">
+            <input class="form-input" type="tel" id="c-phone" placeholder="聯絡電話 *">
+            <input class="form-input" type="text" id="c-line" placeholder="LINE ID">
             <input class="form-input" type="email" id="c-email" placeholder="聯絡信箱">
             <input class="form-input" type="text" id="c-product" placeholder="貨號 / 產品需求">
-            <input class="form-input" type="text" id="c-note" placeholder="採購數量 / 備註">
+            <textarea class="form-input" id="c-note" placeholder="採購數量 / 備註 / 找貨說明（圖片建議加LINE傳送）"></textarea>
             <button class="form-btn" id="submit-btn" onclick="sendInquiry()">送出詢價</button>
+        </div>
+
+        <div class="contact-card" style="max-width: 460px; margin: 30px auto 0;">
+            <h3 style="margin-bottom:20px;">聯繫資訊</h3>
+            <div class="contact-item"><div class="contact-label">公司電話</div><div class="contact-value">02-22268881</div></div>
+            <div class="contact-item"><div class="contact-label">行動電話</div><div class="contact-value">0912-500-704</div></div>
+            <div class="contact-item"><div class="contact-label">LINE ID</div><div class="contact-value">kiwi8999</div></div>
+            <div class="contact-item"><div class="contact-label">公司地址</div><div class="contact-value">新北市中和區民享街4號K棟1樓</div></div>
         </div>
     </div>
 </div>
@@ -589,7 +604,6 @@
         if(navEl) navEl.classList.add('active');
         window.scrollTo(0,0);
         
-        // 切換到對應頁面時載入數據
         if(pageId === 'pet') {
             loadPetAlbum();
         }
@@ -640,7 +654,6 @@
         }
     }
 
-    // 依照【上架序號】數字由大→小排序，數字越大新品越在前
     async function loadPublicAlbum() {
         const wrap = document.getElementById('public-album');
         const loadEl = document.getElementById('public-load');
@@ -651,7 +664,6 @@
         const data = await getTableData("公開產品");
         let html = "";
         if(data && data.records) {
-            // 關鍵：用上架序號降序
             const sorted = data.records.sort((a,b)=>{
                 let numA = a.fields["上架序號"]||0;
                 let numB = b.fields["上架序號"]||0;
@@ -731,6 +743,9 @@
 
     async function sendInquiry() {
         const name = document.getElementById('c-name').value.trim();
+        const company = document.getElementById('c-company').value.trim();
+        const phone = document.getElementById('c-phone').value.trim();
+        const line = document.getElementById('c-line').value.trim();
         const email = document.getElementById('c-email').value.trim();
         const product = document.getElementById('c-product').value.trim();
         const note = document.getElementById('c-note').value.trim();
@@ -738,18 +753,20 @@
         const btn = document.getElementById('submit-btn');
         msgBox.style.display = "none";
 
-        if(!name || !email || !product) {
+        if(!name || !phone) {
             msgBox.className = "msg-tip msg-error";
-            msgBox.innerText = "請填寫必填欄位";
+            msgBox.innerText = "請填寫必填欄位（姓名、聯絡電話）";
             msgBox.style.display = "block";
             return;
         }
-        const mailReg = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-        if(!mailReg.test(email)) {
-            msgBox.className = "msg-tip msg-error";
-            msgBox.innerText = "信箱格式錯誤";
-            msgBox.style.display = "block";
-            return;
+        if(email) {
+            const mailReg = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+            if(!mailReg.test(email)) {
+                msgBox.className = "msg-tip msg-error";
+                msgBox.innerText = "信箱格式錯誤";
+                msgBox.style.display = "block";
+                return;
+            }
         }
 
         btn.disabled = true;
@@ -762,17 +779,28 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    fields:{姓名:name,電子郵件:email,詢價產品:product,備註:note}
+                    fields:{
+                        姓名:name,
+                        "公司名稱/個人採購":company,
+                        聯絡電話:phone,
+                        "LINE ID":line,
+                        電子郵件:email,
+                        詢價產品:product,
+                        備註:note
+                    }
                 })
             });
             const sub = encodeURIComponent("網站新詢價通知");
-            const bodyText = encodeURIComponent(`姓名：${name}\n信箱：${email}\n需求：${product}\n備註：${note}`);
+            const bodyText = encodeURIComponent(`姓名：${name}\n公司/個人：${company}\n電話：${phone}\nLINE：${line}\n信箱：${email}\n產品：${product}\n備註：${note}`);
             window.location.href = `mailto:${RECEIVE_MAIL}?subject=${sub}&body=${bodyText}`;
 
             msgBox.className = "msg-tip msg-success";
-            msgBox.innerText = "送出成功，已發送通知至您信箱";
+            msgBox.innerText = "送出成功，我們會盡快與您聯繫";
             msgBox.style.display = "block";
             document.getElementById('c-name').value = "";
+            document.getElementById('c-company').value = "";
+            document.getElementById('c-phone').value = "";
+            document.getElementById('c-line').value = "";
             document.getElementById('c-email').value = "";
             document.getElementById('c-product').value = "";
             document.getElementById('c-note').value = "";
