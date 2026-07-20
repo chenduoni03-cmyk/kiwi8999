@@ -643,14 +643,30 @@
         }
     }
 
+    // 修復：支援API自動分頁，拉取全部商品記錄（突破單次100條限制）
     async function getTableData(tableName, viewId = null) {
         try {
-            let url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`;
-            if (viewId) url += `?view=${encodeURIComponent(viewId)}`;
-            const res = await fetch(url, {
-                headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
-            });
-            return res.ok ? await res.json() : null;
+            let allRecords = [];
+            let offset = null;
+            const baseUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}`;
+            
+            do {
+                let url = baseUrl;
+                const params = new URLSearchParams();
+                if (viewId) params.append('view', viewId);
+                if (offset) params.append('offset', offset);
+                if (params.toString()) url += `?${params.toString()}`;
+                
+                const res = await fetch(url, {
+                    headers: { "Authorization": `Bearer ${AIRTABLE_API_KEY}` }
+                });
+                if (!res.ok) return null;
+                const data = await res.json();
+                allRecords = allRecords.concat(data.records);
+                offset = data.offset || null;
+            } while (offset);
+            
+            return { records: allRecords };
         } catch (e) {
             console.error(e);
             return null;
