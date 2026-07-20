@@ -261,6 +261,7 @@
             height: 180px;
             object-fit: cover;
             display: block;
+            background: #f5ecd7;
         }
         .album-info {
             padding: 12px 10px;
@@ -629,12 +630,26 @@
     let petAllRecords = [];
     let privateAllRecords = [];
 
+    // 生成壓縮縮圖網址（Airtable 支援寬度參數，大幅減少圖片體積）
+    function getThumbUrl(url, width = 360) {
+        if (!url) return '';
+        try {
+            const u = new URL(url);
+            if (u.hostname.includes('airtable.com') || u.hostname.includes('airtableusercontent.com')) {
+                u.searchParams.set('width', width);
+                return u.toString();
+            }
+            return url;
+        } catch (e) {
+            return url;
+        }
+    }
+
     // 切換頁面 + 記錄網址錨點
     function switchPage(pageId, navEl) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         
-        // 處理導航高亮
         document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
         if (navEl) {
             navEl.classList.add('active');
@@ -644,10 +659,8 @@
         }
 
         window.scrollTo(0,0);
-        // 更新網址錨點，刷新不跳回
         history.replaceState(null, '', `#${pageId}`);
 
-        // 對應頁面延遲載入數據
         if(pageId === 'pet' && petAllRecords.length === 0) loadPetAlbum();
     }
 
@@ -656,6 +669,7 @@
         document.getElementById('modal-title').innerText = productName;
         const gallery = document.getElementById('modal-gallery');
         gallery.innerHTML = "";
+        // 放大圖使用原圖尺寸
         images.forEach(img => {
             const imgEl = document.createElement('img');
             imgEl.src = img.url;
@@ -711,7 +725,7 @@
         }
     }
 
-    // 渲染商品卡片（共用函數）
+    // 渲染商品卡片（統一使用壓縮縮圖）
     function renderAlbum(wrapId, records) {
         const wrap = document.getElementById(wrapId);
         const emptyId = wrapId.replace('album', 'empty');
@@ -726,11 +740,18 @@
 
         emptyEl.style.display = 'none';
         records.forEach(item=>{
-            const pic = item.fields.產品圖片[0].url;
+            const thumbUrl = getThumbUrl(item.fields.產品圖片[0].url, 360);
             const name = item.fields.品名.replace(/"/g,'&quot;');
             const code = item.fields.貨號 || "";
             const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
-            wrap.innerHTML += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" loading="lazy" src="${pic}" alt="${name}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
+            wrap.innerHTML += `
+            <div class="album-item" onclick='openImgModal("${name}",${imgStr})'>
+                <img class="album-img" loading="lazy" decoding="async" src="${thumbUrl}" alt="${name}">
+                <div class="album-info">
+                    <div class="album-name">${item.fields.品名}</div>
+                    <div class="album-code">貨號：${code}</div>
+                </div>
+            </div>`;
         });
         wrap.style.display = 'grid';
     }
@@ -911,7 +932,7 @@
         }
     }
 
-    // 頁面載入時讀取錨點，自動跳到對應頁面
+    // 頁面載入時讀取錨點
     window.addEventListener("DOMContentLoaded",()=>{
         loadPublicAlbum();
         const hash = window.location.hash.slice(1);
@@ -920,7 +941,7 @@
         }
     });
 
-    // 監聽瀏覽器後退/前進，自動切換頁面
+    // 監聽瀏覽器後退/前進
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.slice(1);
         if (hash && document.getElementById(hash)) {
