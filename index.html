@@ -435,11 +435,11 @@
             <img src="logo.png" alt="尼老闆 NKBOSS">
         </div>
         <nav class="nav-menu">
-            <a onclick="switchPage('home',this)" class="active">首頁</a>
-            <a onclick="switchPage('products',this)">產品相簿</a>
-            <a onclick="switchPage('pet',this)">寵物專區</a>
-            <a onclick="switchPage('private',this)">品牌專區</a>
-            <a onclick="switchPage('contact',this)">詢價合作</a>
+            <a onclick="switchPage('home',this)" data-page="home">首頁</a>
+            <a onclick="switchPage('products',this)" data-page="products">產品相簿</a>
+            <a onclick="switchPage('pet',this)" data-page="pet">寵物專區</a>
+            <a onclick="switchPage('private',this)" data-page="private">品牌專區</a>
+            <a onclick="switchPage('contact',this)" data-page="contact">詢價合作</a>
         </nav>
     </div>
 </header>
@@ -624,17 +624,30 @@
     const RECEIVE_MAIL = "tw.jsport@gmail.com";
     const PET_VIEW_ID = "viwAmVVH5Xn4vchNa";
 
-    // 快取全量商品數據，避免重複請求API
+    // 快取全量商品數據
     let publicAllRecords = [];
     let petAllRecords = [];
     let privateAllRecords = [];
 
+    // 切換頁面 + 記錄網址錨點
     function switchPage(pageId, navEl) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
+        
+        // 處理導航高亮
         document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
-        if(navEl) navEl.classList.add('active');
+        if (navEl) {
+            navEl.classList.add('active');
+        } else {
+            const targetNav = document.querySelector(`.nav-menu a[data-page="${pageId}"]`);
+            if (targetNav) targetNav.classList.add('active');
+        }
+
         window.scrollTo(0,0);
+        // 更新網址錨點，刷新不跳回
+        history.replaceState(null, '', `#${pageId}`);
+
+        // 對應頁面延遲載入數據
         if(pageId === 'pet' && petAllRecords.length === 0) loadPetAlbum();
     }
 
@@ -736,7 +749,6 @@
                 const numB = b.fields["上架序號"] || 0;
                 return numB - numA;
             });
-            // 過濾無圖片、無品名的無效數據
             publicAllRecords = sorted.filter(item=>item.fields.產品圖片?.length && item.fields.品名?.trim());
             renderAlbum('public-album', publicAllRecords);
         }
@@ -899,9 +911,22 @@
         }
     }
 
+    // 頁面載入時讀取錨點，自動跳到對應頁面
     window.addEventListener("DOMContentLoaded",()=>{
         loadPublicAlbum();
-    })
+        const hash = window.location.hash.slice(1);
+        if (hash && document.getElementById(hash)) {
+            switchPage(hash);
+        }
+    });
+
+    // 監聽瀏覽器後退/前進，自動切換頁面
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.slice(1);
+        if (hash && document.getElementById(hash)) {
+            switchPage(hash);
+        }
+    });
 </script>
 </body>
 </html>
