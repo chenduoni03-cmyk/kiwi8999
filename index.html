@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"> 
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>尼老闆 NKBOSS - 百貨批發｜企業禮贈品｜政府標案</title>
@@ -92,7 +92,11 @@
             color: var(--text-gray);
             padding-bottom: 15px;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            margin-bottom: 25px;
         }
 
         .home-banner {
@@ -273,6 +277,13 @@
         .album-code {
             color: var(--text-gray);
             font-size: 12px;
+        }
+
+        .empty-tip {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--text-gray);
+            display: none;
         }
 
         .form-card {
@@ -533,7 +544,9 @@
     <div class="container">
         <h2 class="page-title">產品相簿</h2>
         <p class="page-desc">公開展示商品｜點擊圖片可查看全部詳情圖</p>
+        <input class="form-input search-input" type="text" id="public-search" placeholder="輸入貨號 / 品名 / 分類 搜尋商品" oninput="filterPublicAlbum()">
         <div class="loading" id="public-load">載入商品中...</div>
+        <div class="empty-tip" id="public-empty">沒有找到符合條件的商品</div>
         <div class="album-grid" id="public-album" style="display:none;"></div>
     </div>
 </div>
@@ -542,7 +555,9 @@
     <div class="container">
         <h2 class="page-title">寵物專區</h2>
         <p class="page-desc">公開展示寵物用品｜點擊圖片可查看全部詳情圖</p>
+        <input class="form-input search-input" type="text" id="pet-search" placeholder="輸入貨號 / 品名 搜尋寵物商品" oninput="filterPetAlbum()">
         <div class="loading" id="pet-load">載入商品中...</div>
+        <div class="empty-tip" id="pet-empty">沒有找到符合條件的商品</div>
         <div class="album-grid" id="pet-album" style="display:none;"></div>
     </div>
 </div>
@@ -555,8 +570,12 @@
             <input class="form-input" type="password" id="pwd-input" placeholder="請輸入密碼">
             <button class="form-btn" onclick="unlockPrivate()">進入專區</button>
         </div>
-        <div class="loading" id="private-load" style="display:none;">載入私密商品中...</div>
-        <div class="album-grid" id="private-album" style="display:none; margin-top:20px;"></div>
+        <div style="display:none;" id="private-content">
+            <input class="form-input search-input" type="text" id="private-search" placeholder="輸入貨號 / 品名 搜尋私密商品" oninput="filterPrivateAlbum()">
+            <div class="loading" id="private-load">載入私密商品中...</div>
+            <div class="empty-tip" id="private-empty">沒有找到符合條件的商品</div>
+            <div class="album-grid" id="private-album" style="display:none; margin-top:20px;"></div>
+        </div>
     </div>
 </div>
 
@@ -605,13 +624,18 @@
     const RECEIVE_MAIL = "tw.jsport@gmail.com";
     const PET_VIEW_ID = "viwAmVVH5Xn4vchNa";
 
+    // 快取全量商品數據，避免重複請求API
+    let publicAllRecords = [];
+    let petAllRecords = [];
+    let privateAllRecords = [];
+
     function switchPage(pageId, navEl) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
         if(navEl) navEl.classList.add('active');
         window.scrollTo(0,0);
-        if(pageId === 'pet') loadPetAlbum();
+        if(pageId === 'pet' && petAllRecords.length === 0) loadPetAlbum();
     }
 
     function openImgModal(productName, images) {
@@ -636,6 +660,7 @@
         const pwd = document.getElementById('pwd-input').value.trim();
         if(pwd === PRIVATE_PASSWORD) {
             document.getElementById('pwd-card').style.display = 'none';
+            document.getElementById('private-content').style.display = 'block';
             document.getElementById('private-load').style.display = 'block';
             loadPrivateAlbum();
         } else {
@@ -643,7 +668,7 @@
         }
     }
 
-    // 修復：支援API自動分頁，拉取全部商品記錄（突破單次100條限制）
+    // 支援API自動分頁，拉取全部商品記錄
     async function getTableData(tableName, viewId = null) {
         try {
             let allRecords = [];
@@ -673,12 +698,37 @@
         }
     }
 
-    async function loadPublicAlbum() {
-        const wrap = document.getElementById('public-album');
-        const loadEl = document.getElementById('public-load');
+    // 渲染商品卡片（共用函數）
+    function renderAlbum(wrapId, records) {
+        const wrap = document.getElementById(wrapId);
+        const emptyId = wrapId.replace('album', 'empty');
+        const emptyEl = document.getElementById(emptyId);
         wrap.innerHTML = "";
+
+        if (records.length === 0) {
+            wrap.style.display = 'none';
+            emptyEl.style.display = 'block';
+            return;
+        }
+
+        emptyEl.style.display = 'none';
+        records.forEach(item=>{
+            const pic = item.fields.產品圖片[0].url;
+            const name = item.fields.品名.replace(/"/g,'&quot;');
+            const code = item.fields.貨號 || "";
+            const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
+            wrap.innerHTML += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" loading="lazy" src="${pic}" alt="${name}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
+        });
+        wrap.style.display = 'grid';
+    }
+
+    // 公開產品：載入 + 搜尋
+    async function loadPublicAlbum() {
+        const loadEl = document.getElementById('public-load');
+        const wrap = document.getElementById('public-album');
         loadEl.style.display = 'block';
         wrap.style.display = 'none';
+
         const data = await getTableData("公開產品");
         if(data && data.records) {
             const sorted = data.records.sort((a,b)=>{
@@ -686,24 +736,35 @@
                 const numB = b.fields["上架序號"] || 0;
                 return numB - numA;
             });
-            sorted.filter(item=>item.fields.產品圖片?.length && item.fields.品名?.trim()).forEach(item=>{
-                const pic = item.fields.產品圖片[0].url;
-                const name = item.fields.品名.replace(/"/g,'&quot;');
-                const code = item.fields.貨號 || "";
-                const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
-                wrap.innerHTML += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" src="${pic}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
-            })
+            // 過濾無圖片、無品名的無效數據
+            publicAllRecords = sorted.filter(item=>item.fields.產品圖片?.length && item.fields.品名?.trim());
+            renderAlbum('public-album', publicAllRecords);
         }
         loadEl.style.display = 'none';
-        wrap.style.display = 'grid';
     }
 
+    function filterPublicAlbum() {
+        const keyword = document.getElementById('public-search').value.trim().toLowerCase();
+        if (!keyword) {
+            renderAlbum('public-album', publicAllRecords);
+            return;
+        }
+        const filtered = publicAllRecords.filter(item => {
+            const name = (item.fields.品名 || '').toLowerCase();
+            const code = (item.fields.貨號 || '').toLowerCase();
+            const category = (item.fields.產品分類 || '').toLowerCase();
+            return name.includes(keyword) || code.includes(keyword) || category.includes(keyword);
+        });
+        renderAlbum('public-album', filtered);
+    }
+
+    // 寵物專區：載入 + 搜尋
     async function loadPetAlbum() {
-        const wrap = document.getElementById('pet-album');
         const loadEl = document.getElementById('pet-load');
-        wrap.innerHTML = "";
+        const wrap = document.getElementById('pet-album');
         loadEl.style.display = 'block';
         wrap.style.display = 'none';
+
         const data = await getTableData("公開產品", PET_VIEW_ID);
         if(data && data.records) {
             const sorted = data.records.sort((a,b)=>{
@@ -711,24 +772,33 @@
                 const numB = b.fields["上架序號"] || 0;
                 return numB - numA;
             });
-            sorted.filter(item=>item.fields.產品圖片?.length && item.fields.品名?.trim()).forEach(item=>{
-                const pic = item.fields.產品圖片[0].url;
-                const name = item.fields.品名.replace(/"/g,'&quot;');
-                const code = item.fields.貨號 || "";
-                const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
-                wrap.innerHTML += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" src="${pic}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
-            })
+            petAllRecords = sorted.filter(item=>item.fields.產品圖片?.length && item.fields.品名?.trim());
+            renderAlbum('pet-album', petAllRecords);
         }
         loadEl.style.display = 'none';
-        wrap.style.display = 'grid';
     }
 
+    function filterPetAlbum() {
+        const keyword = document.getElementById('pet-search').value.trim().toLowerCase();
+        if (!keyword) {
+            renderAlbum('pet-album', petAllRecords);
+            return;
+        }
+        const filtered = petAllRecords.filter(item => {
+            const name = (item.fields.品名 || '').toLowerCase();
+            const code = (item.fields.貨號 || '').toLowerCase();
+            return name.includes(keyword) || code.includes(keyword);
+        });
+        renderAlbum('pet-album', filtered);
+    }
+
+    // 品牌專區：載入 + 搜尋
     async function loadPrivateAlbum() {
-        const wrap = document.getElementById('private-album');
         const loadEl = document.getElementById('private-load');
-        wrap.innerHTML = "";
+        const wrap = document.getElementById('private-album');
         loadEl.style.display = 'block';
         wrap.style.display = 'none';
+
         const data = await getTableData("私密產品");
         if(data && data.records) {
             const sorted = data.records.sort((a,b)=>{
@@ -736,16 +806,24 @@
                 const numB = b.fields["上架序號"] || 0;
                 return numB - numA;
             });
-            sorted.filter(item=>item.fields.產品圖片?.length && item.fields.品名?.trim()).forEach(item=>{
-                const pic = item.fields.產品圖片[0].url;
-                const name = item.fields.品名.replace(/"/g,'&quot;');
-                const code = item.fields.貨號 || "";
-                const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
-                wrap.innerHTML += `<div class="album-item" onclick='openImgModal("${name}",${imgStr})'><img class="album-img" src="${pic}"><div class="album-info"><div class="album-name">${item.fields.品名}</div><div class="album-code">貨號：${code}</div></div></div>`;
-            })
+            privateAllRecords = sorted.filter(item=>item.fields.產品圖片?.length && item.fields.品名?.trim());
+            renderAlbum('private-album', privateAllRecords);
         }
         loadEl.style.display = 'none';
-        wrap.style.display = 'grid';
+    }
+
+    function filterPrivateAlbum() {
+        const keyword = document.getElementById('private-search').value.trim().toLowerCase();
+        if (!keyword) {
+            renderAlbum('private-album', privateAllRecords);
+            return;
+        }
+        const filtered = privateAllRecords.filter(item => {
+            const name = (item.fields.品名 || '').toLowerCase();
+            const code = (item.fields.貨號 || '').toLowerCase();
+            return name.includes(keyword) || code.includes(keyword);
+        });
+        renderAlbum('private-album', filtered);
     }
 
     async function sendInquiry() {
