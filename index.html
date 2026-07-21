@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0"> 
+    <meta http-equiv="Expires" content="0">
     <title>尼老闆 NKBOSS - 百貨批發｜企業禮贈品｜政府標案</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -545,7 +545,7 @@
     <div class="container">
         <h2 class="page-title">產品相簿</h2>
         <p class="page-desc">公開展示商品｜點擊圖片可查看全部詳情圖</p>
-        <input class="form-input search-input" type="text" id="public-search" placeholder="輸入貨號 / 品名 / 分類 搜尋商品" oninput="filterPublicAlbum()">
+        <input class="form-input search-input" type="text" id="public-search" placeholder="輸入貨號 / 品名 / 分類 搜尋商品" oninput="debouncedFilterPublic()">
         <div class="loading" id="public-load">載入商品中...</div>
         <div class="empty-tip" id="public-empty">沒有找到符合條件的商品</div>
         <div class="album-grid" id="public-album" style="display:none;"></div>
@@ -556,7 +556,7 @@
     <div class="container">
         <h2 class="page-title">寵物專區</h2>
         <p class="page-desc">公開展示寵物用品｜點擊圖片可查看全部詳情圖</p>
-        <input class="form-input search-input" type="text" id="pet-search" placeholder="輸入貨號 / 品名 搜尋寵物商品" oninput="filterPetAlbum()">
+        <input class="form-input search-input" type="text" id="pet-search" placeholder="輸入貨號 / 品名 搜尋寵物商品" oninput="debouncedFilterPet()">
         <div class="loading" id="pet-load">載入商品中...</div>
         <div class="empty-tip" id="pet-empty">沒有找到符合條件的商品</div>
         <div class="album-grid" id="pet-album" style="display:none;"></div>
@@ -572,7 +572,7 @@
             <button class="form-btn" onclick="unlockPrivate()">進入專區</button>
         </div>
         <div style="display:none;" id="private-content">
-            <input class="form-input search-input" type="text" id="private-search" placeholder="輸入貨號 / 品名 搜尋私密商品" oninput="filterPrivateAlbum()">
+            <input class="form-input search-input" type="text" id="private-search" placeholder="輸入貨號 / 品名 搜尋私密商品" oninput="debouncedFilterPrivate()">
             <div class="loading" id="private-load">載入私密商品中...</div>
             <div class="empty-tip" id="private-empty">沒有找到符合條件的商品</div>
             <div class="album-grid" id="private-album" style="display:none; margin-top:20px;"></div>
@@ -630,7 +630,16 @@
     let petAllRecords = [];
     let privateAllRecords = [];
 
-    // 生成壓縮縮圖網址（Airtable 支援寬度參數，大幅減少圖片體積）
+    // 防抖函數：停止輸入 delay 毫秒後才執行
+    function debounce(func, delay = 300) {
+        let timer = null;
+        return function(...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    // 生成壓縮縮圖網址
     function getThumbUrl(url, width = 360) {
         if (!url) return '';
         try {
@@ -669,7 +678,6 @@
         document.getElementById('modal-title').innerText = productName;
         const gallery = document.getElementById('modal-gallery');
         gallery.innerHTML = "";
-        // 放大圖使用原圖尺寸
         images.forEach(img => {
             const imgEl = document.createElement('img');
             imgEl.src = img.url;
@@ -725,12 +733,11 @@
         }
     }
 
-    // 渲染商品卡片（統一使用壓縮縮圖）
+    // 渲染商品卡片：一次性拼接HTML，減少DOM操作
     function renderAlbum(wrapId, records) {
         const wrap = document.getElementById(wrapId);
         const emptyId = wrapId.replace('album', 'empty');
         const emptyEl = document.getElementById(emptyId);
-        wrap.innerHTML = "";
 
         if (records.length === 0) {
             wrap.style.display = 'none';
@@ -739,12 +746,13 @@
         }
 
         emptyEl.style.display = 'none';
+        let html = '';
         records.forEach(item=>{
             const thumbUrl = getThumbUrl(item.fields.產品圖片[0].url, 360);
             const name = item.fields.品名.replace(/"/g,'&quot;');
             const code = item.fields.貨號 || "";
             const imgStr = JSON.stringify(item.fields.產品圖片).replace(/"/g,'&quot;');
-            wrap.innerHTML += `
+            html += `
             <div class="album-item" onclick='openImgModal("${name}",${imgStr})'>
                 <img class="album-img" loading="lazy" decoding="async" src="${thumbUrl}" alt="${name}">
                 <div class="album-info">
@@ -753,6 +761,7 @@
                 </div>
             </div>`;
         });
+        wrap.innerHTML = html;
         wrap.style.display = 'grid';
     }
 
@@ -790,6 +799,7 @@
         });
         renderAlbum('public-album', filtered);
     }
+    const debouncedFilterPublic = debounce(filterPublicAlbum, 300);
 
     // 寵物專區：載入 + 搜尋
     async function loadPetAlbum() {
@@ -824,6 +834,7 @@
         });
         renderAlbum('pet-album', filtered);
     }
+    const debouncedFilterPet = debounce(filterPetAlbum, 300);
 
     // 品牌專區：載入 + 搜尋
     async function loadPrivateAlbum() {
@@ -858,6 +869,7 @@
         });
         renderAlbum('private-album', filtered);
     }
+    const debouncedFilterPrivate = debounce(filterPrivateAlbum, 300);
 
     async function sendInquiry() {
         const name = document.getElementById('c-name').value.trim();
